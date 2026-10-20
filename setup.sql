@@ -88,4 +88,10 @@ create policy tracker_files_insert on storage.objects for insert to authenticate
 with check (bucket_id='bewerbungsunterlagen' and (storage.foldername(name))[1]=(select auth.uid())::text and (select tracker_private.has_access()));
 create policy tracker_files_delete on storage.objects for delete to authenticated
 using (bucket_id='bewerbungsunterlagen' and (storage.foldername(name))[1]=(select auth.uid())::text and (select tracker_private.has_access()));
+-- Restrict Supabase's optional automatic-RLS event-trigger helper.
+do $$ begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    execute 'revoke execute on function public.rls_auto_enable() from public, anon, authenticated';
+  end if;
+end $$;
 commit;
