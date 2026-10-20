@@ -212,6 +212,21 @@
   @media(max-width:600px){.shell{padding:26px 16px 36px}.top{gap:20px;padding-bottom:22px;margin-bottom:20px}.brand h1{font-size:38px}.brand h1 span{font-size:11px;letter-spacing:2px}.brand .eyebrow{font-size:9px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions button{justify-content:center;padding:10px 8px}.actions .primary{grid-column:1/-1;margin:0}.grid{gap:10px;margin-bottom:18px}.stat{padding:18px 15px}.stat:before{left:15px}.stat .value{font-size:34px}.stat .label{font-size:10px}.stat .sub{font-size:10px}.card{padding:18px 14px}.card-head h2{font-size:24px}.toolbar{gap:8px}.toolbar .search{flex-basis:100%;min-width:0}.toolbar select{width:100%}.modal{padding:10px}.modal-box{padding:20px 16px}.modal-title h3{font-size:24px}.login-panel{margin:5vh auto;padding:18px}.login-panel .card{padding:30px 24px}.login-panel h1{font-size:38px}.empty{padding:35px 16px}#sankey{height:auto;min-height:220px}}
   @media(prefers-reduced-motion:reduce){button,.btn{transition:none}}
 
+
+  .main{grid-template-columns:minmax(0,1fr)}
+  .statistics-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 34px;margin:24px 0}
+  .statistic-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px;margin-bottom:12px}
+  .statistic-heading strong{white-space:nowrap;font-size:20px;font-family:Georgia,serif;font-weight:400}.statistic-heading small{font-family:inherit;font-size:12px;color:var(--muted)}
+  .statistic-track{height:7px;border-radius:8px;background:#eee7e0;overflow:hidden}.statistic-track div{height:100%;border-radius:8px}
+  .follow-up{display:flex;gap:15px;align-items:center;margin-bottom:18px}.follow-up .help{margin:0;flex:1}#followUpButton{white-space:nowrap}#followUpButton[aria-pressed="true"]{background:#64444d;color:white;border-color:#64444d}
+  .due-note{font-size:11px;color:#8a414e;margin-top:7px}.badge{white-space:normal;line-height:1.5;max-width:230px}
+  table{min-width:0;table-layout:fixed}th,td{overflow-wrap:anywhere}th:first-child{width:23%}th:nth-child(2){width:24%}th:last-child{width:90px}
+  @media(max-width:1100px){
+    .table-wrap{border:0;overflow:visible}table,tbody,tr,td{display:block;width:100%}thead{display:none}tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    tbody tr{padding:18px;border:1px solid var(--line);border-radius:9px;background:#fffefa;min-width:0}td{padding:9px 0;border:0;display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;font-size:12px}td:before{content:attr(data-label);font-size:10px;color:var(--muted);padding-top:3px}td:first-child{display:block;padding:0 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px}td:first-child:before{display:none}.company{font-size:17px}.role{line-height:1.5}.due-note{grid-column:2}.mini-btn{justify-content:center;width:100%}.statistics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:600px){tbody{grid-template-columns:minmax(0,1fr)}.statistics-grid{grid-template-columns:minmax(0,1fr);gap:21px}.follow-up{align-items:flex-start;flex-direction:column;gap:9px}.statistics-card .card-head h2{font-size:23px}select{max-width:100%}.toolbar select{font-size:12px}.form-row select{font-size:12px}}
+
 </style>
 </head>
 <body>
@@ -264,9 +279,9 @@
         <input class="search" id="search" placeholder="Firma oder Stelle suchen …" oninput="renderTable()">
         <select id="filterStatus" onchange="renderTable()">
           <option value="">Alle Status</option>
-          <option>Interessant</option>
-          <option>Beworben</option>
-          <option>Antwort offen</option>
+          <option value="Interessant">Bewerbung noch nicht versendet</option>
+          <option value="Beworben">Beworben - Antwort fehlt noch</option>
+          
           <option>1. Gespräch</option>
           <option>2. Gespräch</option>
           <option>Angebot</option>
@@ -274,9 +289,10 @@
           <option>Zurückgezogen</option>
         </select>
       </div>
+      <div class="follow-up"><button class="soft" id="followUpButton" aria-pressed="false" onclick="toggleFollowUps()">Nachfassen · 0</button><p class="help" id="followUpHint"></p></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Firma / Rolle</th><th>Status</th><th>Beworben</th><th>Nächster Schritt</th><th>Unterlagen</th><th></th></tr></thead>
+          <thead><tr><th>Firma / Rolle</th><th>Status</th><th>Versendet am</th><th>Nächster Schritt</th><th>Unterlagen</th><th></th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
         <div id="empty" class="empty">
@@ -286,17 +302,12 @@
       </div>
     </section>
 
-    <aside class="card">
-      <div class="card-head">
-        <h2>Bewerbungsfluss</h2>
-        <span>automatisch</span>
-      </div>
-      <svg id="sankey" viewBox="0 0 620 360" role="img" aria-label="Sankey Diagramm des Bewerbungsprozesses"></svg>
-      <div class="legend">
-        <span>🌸 Bewerbung</span><span>💜 Gespräch</span><span>🌿 Angebot</span><span>🌙 Absage</span>
-      </div>
-      <div class="tips" id="tipBox">Tipp: Trage auch „Interessant“ ein, wenn Melanie eine Stelle erst später prüfen möchte. So geht nichts verloren.</div>
-    </aside>
+    <section class="card statistics-card" aria-labelledby="statisticsTitle">
+      <div class="card-head"><h2 id="statisticsTitle">Deine Bewerbungen in Zahlen</h2></div>
+      <p class="help" id="statisticsSummary"></p>
+      <div id="statistics" class="statistics-grid"></div>
+      <div class="tips" id="tipBox"></div>
+    </section>
   </div>
 
   <div class="footer">Angemeldet als <span id="accountEmail"></span> · Bewerbungen und Unterlagen werden zentral gespeichert. Regelmäßig ein zusätzliches Backup sichern.</div>
@@ -319,16 +330,16 @@
       <div class="form-row"><label>Stelle *</label><input id="role" placeholder="z. B. Customer Success Manager"></div>
       <div class="form-row"><label>Status</label>
         <select id="status">
-          <option>Interessant</option><option>Beworben</option><option>Antwort offen</option>
+          <option value="Interessant">Bewerbung noch nicht versendet</option><option value="Beworben">Beworben - Antwort fehlt noch</option>
           <option>1. Gespräch</option><option>2. Gespräch</option><option>Angebot</option>
           <option>Absage</option><option>Zurückgezogen</option>
         </select>
       </div>
-      <div class="form-row"><label>Datum Bewerbung</label><input id="appliedDate" type="date"></div>
+      <div class="form-row"><label>Versendet am</label><input id="appliedDate" type="date"><span class="help">Für „Nachfassen“ zählt dieses Datum. Nach 10 Tagen ohne Antwort erscheint die Bewerbung im Filter.</span></div>
       <div class="form-row"><label>Arbeitsmodell</label>
         <select id="workModel"><option>Remote</option><option>Hybrid</option><option>Vor Ort</option><option>Unklar</option></select>
       </div>
-      <div class="form-row"><label>Standort</label><input id="location" placeholder="z. B. EU Remote / Deutschland"></div>
+      
       <div class="form-row"><label>Gehalt / Range</label><input id="salary" placeholder="z. B. 45–55k €"></div>
       <div class="form-row"><label>Link zur Stelle</label><input id="url" type="url" placeholder="https://…"></div>
       <div class="form-row"><label>Nächster Schritt</label><input id="nextStep" placeholder="z. B. Follow-up am Freitag"></div>
@@ -390,7 +401,7 @@ function openForm(id=null){
   renderDocuments();
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow='hidden';
-  const fields=['company','role','location','salary','url','nextStep','notes'];
+  const fields=['company','role','salary','url','nextStep','notes'];
   fields.forEach(f=>document.getElementById(f).value='');
   document.getElementById('status').value='Interessant';
   document.getElementById('workModel').value='Remote';
@@ -408,7 +419,7 @@ function openForm(id=null){
     document.getElementById('status').value=a.status||'Interessant';
     document.getElementById('appliedDate').value=a.appliedDate||'';
     document.getElementById('workModel').value=a.workModel||'Remote';
-    document.getElementById('location').value=a.location||'';
+    
     document.getElementById('salary').value=a.salary||'';
     document.getElementById('url').value=a.url||'';
     document.getElementById('nextStep').value=a.nextStep||'';
@@ -432,13 +443,15 @@ async function saveApplication(){
   const company=document.getElementById('company').value.trim();
   const role=document.getElementById('role').value.trim();
   if(!company || !role){alert('Bitte Firma und Stelle eintragen.');return;}
+  const status=document.getElementById('status').value;
+  if(status==='Beworben' && !document.getElementById('appliedDate').value){notify('Bitte das Versanddatum eintragen, damit die Erinnerung nach zehn Tagen stimmt.');document.getElementById('appliedDate').focus();return;}
   const id=document.getElementById('editId').value || uid();
   const item={
     id, company, role,
     status:document.getElementById('status').value,
     appliedDate:document.getElementById('appliedDate').value,
     workModel:document.getElementById('workModel').value,
-    location:document.getElementById('location').value.trim(),
+    location:applications.find(a=>a.id===id)?.location || '',
     salary:document.getElementById('salary').value.trim(),
     url:document.getElementById('url').value.trim(),
     nextStep:document.getElementById('nextStep').value.trim(),
@@ -470,24 +483,42 @@ function badgeClass(s){
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function fmtDate(v){if(!v) return '–'; const [y,m,d]=v.split('-'); return `${d}.${m}.${y}`;}
 
+const statusLabels={'Interessant':'Bewerbung noch nicht versendet','Beworben':'Beworben - Antwort fehlt noch','Antwort offen':'Beworben - Antwort fehlt noch'};
+function canonicalStatus(s){return s==='Antwort offen'||s==='Beworben - Antwort fehlt noch'?'Beworben':s==='Bewerbung noch nicht versendet'?'Interessant':s;}
+function statusLabel(s){return statusLabels[s]||s;}
+let followUpOnly=false;
+function calendarDay(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return null;
+  const [y,m,d]=value.split('-').map(Number),date=new Date(Date.UTC(y,m-1,d));
+  return date.getUTCFullYear()===y&&date.getUTCMonth()===m-1&&date.getUTCDate()===d?date.getTime()/86400000:null;
+}
+function waitingDays(a,now=new Date()){
+  if(canonicalStatus(a.status)!=='Beworben')return null;
+  const sent=calendarDay(a.appliedDate);if(sent===null)return null;
+  return Math.floor(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())/86400000)-sent;
+}
+function isDue(a,now=new Date()){const days=waitingDays(a,now);return days!==null&&days>=10;}
+function toggleFollowUps(){
+  followUpOnly=!followUpOnly;
+  document.getElementById('search').value='';document.getElementById('filterStatus').value='';renderTable();
+}
 function renderTable(){
-  const q=document.getElementById('search').value.toLowerCase().trim();
-  const fs=document.getElementById('filterStatus').value;
-  const filtered=applications.filter(a=>{
-    const hay=(a.company+' '+a.role+' '+(a.location||'')+' '+(a.notes||'')).toLowerCase();
-    return (!q||hay.includes(q)) && (!fs||a.status===fs);
-  });
-  const rows=document.getElementById('rows');
-  rows.innerHTML=filtered.map(a=>`
-    <tr>
-      <td><div class="company">${esc(a.company)}</div><div class="role">${esc(a.role)} · ${esc(a.priority||'⭐ Normal')}</div></td>
-      <td><span class="badge ${badgeClass(a.status)}">${esc(a.status)}</span></td>
-      <td>${fmtDate(a.appliedDate)}</td>
-      <td>${esc(a.nextStep||'–')}</td>
-      <td><span class="badge">📎 ${[...documents.values()].filter(d=>d.applicationId===a.id).length}</span></td>
-      <td><button class="mini-btn" data-edit="${esc(a.id)}">Öffnen</button></td>
-    </tr>`).join('');
-  document.getElementById('empty').style.display = filtered.length ? 'none' : 'block';
+  const q=document.getElementById('search').value.toLowerCase().trim(),fs=document.getElementById('filterStatus').value;
+  const filtered=applications.filter(a=>(!q||(a.company+' '+a.role+' '+(a.notes||'')).toLowerCase().includes(q))&&(!fs||canonicalStatus(a.status)===fs)&&(!followUpOnly||isDue(a)));
+  if(followUpOnly)filtered.sort((a,b)=>a.appliedDate.localeCompare(b.appliedDate));
+  document.getElementById('followUpButton').textContent=`Nachfassen · ${applications.filter(a=>isDue(a)).length}`;
+  document.getElementById('followUpButton').setAttribute('aria-pressed',String(followUpOnly));
+  const missing=applications.filter(a=>canonicalStatus(a.status)==='Beworben'&&calendarDay(a.appliedDate)===null).length;
+  document.getElementById('followUpHint').textContent=(followUpOnly?'Nachfassen aktiv: ':'')+'Ohne Antwort seit mindestens 10 Tagen ab Versanddatum.'+(missing?` Bei ${missing} Bewerbung(en) fehlt das Versanddatum – bitte ergänzen.`:'');
+  document.getElementById('rows').innerHTML=filtered.map(a=>`<tr>
+    <td data-label="Firma / Rolle"><div class="company">${esc(a.company)}</div><div class="role">${esc(a.role)} · ${esc(a.priority||'⭐ Normal')}</div></td>
+    <td data-label="Status"><span class="badge ${badgeClass(a.status)}">${esc(statusLabel(a.status))}</span>${isDue(a)?`<div class="due-note">Seit ${waitingDays(a)} Tagen ohne Antwort</div>`:''}</td>
+    <td data-label="Versendet am">${fmtDate(a.appliedDate)}</td>
+    <td data-label="Nächster Schritt">${esc(a.nextStep||'–')}</td>
+    <td data-label="Unterlagen"><span class="badge">📎 ${[...documents.values()].filter(d=>d.applicationId===a.id).length}</span></td>
+    <td data-label="Bearbeiten"><button class="mini-btn" data-edit="${esc(a.id)}">Öffnen</button></td></tr>`).join('');
+  const empty=document.getElementById('empty');empty.style.display=filtered.length?'none':'block';
+  empty.innerHTML=applications.length?(followUpOnly?'<strong>Aktuell nichts nachzufassen.</strong>Keine passenden Bewerbungen warten seit mindestens zehn Tagen auf Antwort.':'<strong>Keine passenden Bewerbungen.</strong>Ändere die Suche oder den Statusfilter.'):'<strong>Noch keine Bewerbung eingetragen.</strong>Mit „Bewerbung hinzufügen“ beginnt dein nächstes Kapitel.';
   document.getElementById('countLabel').textContent=`${filtered.length} ${filtered.length===1?'Eintrag':'Einträge'}`;
 }
 function renderKPIs(){
@@ -499,95 +530,19 @@ function renderKPIs(){
   document.getElementById('kpiActive').textContent=active;
   document.getElementById('kpiInterviews').textContent=interviews;
   document.getElementById('kpiOffers').textContent=offers;
-  let tip='Tipp: Trage auch „Interessant“ ein, wenn Melanie eine Stelle erst später prüfen möchte. So geht nichts verloren.';
+  let tip='Noch nicht versendete Bewerbungen kannst du in Ruhe vorbereiten und später auf „Beworben - Antwort fehlt noch“ setzen.';
   if(total>=3 && interviews===0) tip='Noch kein Gespräch? Dann lohnt sich ein kurzer Check von CV, LinkedIn-Profil und den ersten 3–4 Zeilen jeder Bewerbung.';
   if(interviews>0 && offers===0) tip='Sehr gut: Es gibt Gespräche. Jetzt lohnt es sich, direkt nach jedem Call Eindrücke und nächste Schritte einzutragen.';
   if(offers>0) tip='🎉 Angebot da! Jetzt Gehalt, Remote-Regelung, Probezeit und Entwicklungsmöglichkeiten sauber vergleichen.';
   document.getElementById('tipBox').textContent=tip;
 }
-function renderSankey(){
-  const svg=document.getElementById('sankey');
-  svg.innerHTML='';
+function renderStatistics(){
   const total=applications.length;
-  if(!total){
-    svg.innerHTML=`<text x="310" y="165" text-anchor="middle" font-size="16" fill="#7a6f7c">Sobald Bewerbungen eingetragen sind,</text>
-                   <text x="310" y="190" text-anchor="middle" font-size="16" fill="#7a6f7c">erscheint hier der Bewerbungsfluss.</text>`;
-    return;
-  }
-
-  const counts = {
-    'Interessant':0,'Beworben':0,'Antwort offen':0,'1. Gespräch':0,'2. Gespräch':0,'Angebot':0,'Absage':0,'Zurückgezogen':0
-  };
-  applications.forEach(a=>counts[a.status]=(counts[a.status]||0)+1);
-
-  const stages = [
-    {name:'Bewerbungen', x:20, color:'#d96f9c'},
-    {name:'Offen', x:170, color:'#c997ba'},
-    {name:'Gespräch', x:325, color:'#9b7bd1'},
-    {name:'Angebot', x:500, color:'#5f9f86'}
-  ];
-  const rejected = counts['Absage']+counts['Zurückgezogen'];
-  const open = counts['Interessant']+counts['Beworben']+counts['Antwort offen'];
-  const interview = counts['1. Gespräch']+counts['2. Gespräch'];
-  const offer=counts['Angebot'];
-
-  // Cumulative funnel-like values to make the flow intuitive.
-  const progressedToInterview = interview + offer;
-  const progressedToOffer = offer;
-
-  const H=250, top=55, barW=22;
-  const scale=Math.min(15, H/Math.max(total,1));
-  const vals=[total, Math.max(open+progressedToInterview, progressedToInterview), progressedToInterview, progressedToOffer];
-  const ys=vals.map(v=>top+(H-v*scale)/2);
-  const hs=vals.map(v=>Math.max(v*scale, v?8:0));
-
-  function rect(x,y,w,h,fill,rx=8){
-    const el=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    Object.entries({x,y,width:w,height:h,fill,rx}).forEach(([k,v])=>el.setAttribute(k,v));svg.appendChild(el);
-  }
-  function textEl(x,y,t,size=12,weight=700,fill='#5f5361',anchor='middle'){
-    const el=document.createElementNS('http://www.w3.org/2000/svg','text');
-    Object.entries({x,y,'font-size':size,'font-weight':weight,fill,'text-anchor':anchor}).forEach(([k,v])=>el.setAttribute(k,v)); el.textContent=t; svg.appendChild(el);
-  }
-  function flow(x1,y1,h1,x2,y2,h2,stroke,opacity=.34){
-    if(h1<=0||h2<=0) return;
-    const w=Math.max(Math.min(h1,h2),3);
-    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-    const sy=y1+h1/2, ty=y2+h2/2, c=(x2-x1)*.5;
-    p.setAttribute('d',`M ${x1} ${sy} C ${x1+c} ${sy}, ${x2-c} ${ty}, ${x2} ${ty}`);
-    p.setAttribute('fill','none'); p.setAttribute('stroke',stroke); p.setAttribute('stroke-width',w); p.setAttribute('stroke-linecap','round'); p.setAttribute('opacity',opacity);
-    svg.insertBefore(p,svg.firstChild);
-  }
-
-  // Main flows
-  if(vals[1]>0) flow(stages[0].x+barW,ys[0],hs[0],stages[1].x,ys[1],hs[1],'#d96f9c',.28);
-  if(vals[2]>0) flow(stages[1].x+barW,ys[1],hs[1],stages[2].x,ys[2],hs[2],'#9b7bd1',.34);
-  if(vals[3]>0) flow(stages[2].x+barW,ys[2],hs[2],stages[3].x,ys[3],hs[3],'#5f9f86',.38);
-
-  // Rejection branch
-  if(rejected>0){
-    const ry=300, rh=Math.max(rejected*scale,10), rx=325;
-    flow(stages[0].x+barW,ys[0]+hs[0]*.72,Math.min(rh,hs[0]*.45),rx,ry,rh,'#c9697a',.26);
-    rect(rx,ry-rh/2,barW,rh,'#c9697a');
-    textEl(rx+barW/2,335,`Absage ${rejected}`,12,800,'#8f5360');
-  }
-
-  stages.forEach((s,i)=>{
-    if(i===3 && offer===0) return;
-    rect(s.x,ys[i],barW,Math.max(hs[i],8),s.color);
-  });
-
-  textEl(stages[0].x+barW/2,30,`Gesamt ${total}`,13,800,'#6b5865');
-  textEl(stages[1].x+barW/2,30,`Offen ${open}`,13,800,'#6b5865');
-  textEl(stages[2].x+barW/2,30,`Gespräch ${interview}`,13,800,'#6b5865');
-  textEl(stages[3].x+barW/2,30,`Angebot ${offer}`,13,800,'#6b5865');
-
-  textEl(92,345,'Bewerbung',11,700,'#8b7b89');
-  textEl(245,345,'Vorauswahl',11,700,'#8b7b89');
-  textEl(408,345,'Interview',11,700,'#8b7b89');
-  textEl(535,345,'Ziel',11,700,'#8b7b89');
+  const groups=[['Noch nicht versendet',applications.filter(a=>canonicalStatus(a.status)==='Interessant').length,'#b69c8c'],['Antwort fehlt',applications.filter(a=>canonicalStatus(a.status)==='Beworben').length,'#ae747e'],['Im Gespräch',applications.filter(a=>a.status.includes('Gespräch')).length,'#8e798d'],['Angebote',applications.filter(a=>a.status==='Angebot').length,'#718a79'],['Absagen',applications.filter(a=>a.status==='Absage').length,'#a56b65'],['Zurückgezogen',applications.filter(a=>a.status==='Zurückgezogen').length,'#928b84']];
+  document.getElementById('statistics').innerHTML=groups.map(([label,count,color])=>`<div class="statistic-item"><div class="statistic-heading"><span>${label}</span><strong>${count}<small> · ${total?Math.round(count/total*100):0} %</small></strong></div><div class="statistic-track" aria-hidden="true"><div style="width:${total?count/total*100:0}%;background:${color}"></div></div></div>`).join('');
+  document.getElementById('statisticsSummary').textContent=total?`${total} Bewerbungen · aktueller Stand`:'Deine Statistik wächst mit deinen Bewerbungen.';
 }
-function renderAll(){renderTable();renderKPIs();renderSankey();}
+function renderAll(){renderTable();renderKPIs();renderStatistics();}
 
 const MB=1024*1024, MAX_FILE=20*MB, MAX_TOTAL=100*MB;
 const statuses=['Interessant','Beworben','Antwort offen','1. Gespräch','2. Gespräch','Angebot','Absage','Zurückgezogen'];
@@ -597,7 +552,7 @@ function extension(name){return name.toLowerCase().split('.').pop();}
 function fileType(name){const ext=extension(name);return Object.prototype.hasOwnProperty.call(mimeByExtension,ext)?mimeByExtension[ext]:undefined;}
 function notify(message){document.getElementById('notice').textContent=message;}
 function sizeLabel(n){return n>=MB ? (n/MB).toLocaleString('de-DE',{maximumFractionDigits:1})+' MB' : Math.max(1,Math.ceil(n/1024))+' KB';}
-function formSnapshot(){return JSON.stringify([fields.map(f=>document.getElementById(f).value),draftDocuments.map(d=>d.id)]);}
+function formSnapshot(){return JSON.stringify([fields.filter(f=>f!=='location').map(f=>document.getElementById(f).value),draftDocuments.map(d=>d.id)]);}
 async function runBusy(message, action){
   if(busy || !ready) return false;
   busy=true; document.querySelector('.shell').inert=true;document.getElementById('modal').inert=true;notify(message);
@@ -617,6 +572,7 @@ function normalizeApplications(list){
       item[f]=a[f] || '';
       if(item[f].length>100000) throw new Error('Ein Textfeld ist zu lang.');
     }
+    item.status=canonicalStatus(item.status);
     if(!item.company.trim() || !item.role.trim() || !statuses.includes(item.status)) throw new Error('Firma, Stelle oder Status sind ungültig.');
     if(item.appliedDate && !/^\d{4}-\d{2}-\d{2}$/.test(item.appliedDate)) throw new Error('Ungültiges Bewerbungsdatum.');
     item.updatedAt=typeof a.updatedAt==='string'?a.updatedAt:'';
@@ -707,7 +663,7 @@ for(const name of ['dragleave','drop']) dropZone.addEventListener(name,e=>{e.pre
 dropZone.addEventListener('drop',e=>addDocuments(e.dataTransfer.files));
 // Prevent an accidental drop outside the drop area from navigating away from unsaved data.
 for(const name of ['dragover','drop']) window.addEventListener(name,e=>{if(e.dataTransfer?.types.includes('Files')) e.preventDefault();});
-for(const field of fields){const input=document.getElementById(field);const label=input.parentElement.querySelector('label');if(label) label.htmlFor=field;}
+for(const field of fields.filter(f=>f!=='location')){const input=document.getElementById(field);const label=input.parentElement.querySelector('label');if(label) label.htmlFor=field;}
 window.addEventListener('beforeunload',e=>{if(busy || (document.getElementById('modal').classList.contains('open') && formSnapshot()!==formBaseline)){e.preventDefault();e.returnValue='';}});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeForm();
@@ -725,7 +681,7 @@ function checked(result){if(result.error) throw new Error(result.error.message);
 function clearAccount(){
   authGeneration++;currentUser=null;ready=false;applications=[];documents=new Map();draftDocuments=[];revision=0;
   document.getElementById('modal').classList.remove('open');document.body.style.overflow='';
-  fields.forEach(f=>document.getElementById(f).value='');
+  fields.filter(f=>f!=='location').forEach(f=>document.getElementById(f).value='');
   document.querySelector('.shell').hidden=true;document.getElementById('loginPanel').hidden=false;renderAll();notify('');
 }
 function applyState(row){
@@ -839,7 +795,7 @@ async function changePassword(event){
   catch{message.textContent='Passwort konnte nicht geändert werden. Bitte Verbindung prüfen und ein anderes Passwort wählen.';}
   finally{button.disabled=false;}
 }
-setInterval(()=>refreshCloud(),15000);
+setInterval(()=>{refreshCloud();if(ready&&!document.hidden)renderTable();},15000);
 window.addEventListener('focus',()=>refreshCloud());
 window.addEventListener('online',()=>refreshCloud());
 window.addEventListener('offline',()=>syncStatus('Offline · Speichern benötigt Internet'));
